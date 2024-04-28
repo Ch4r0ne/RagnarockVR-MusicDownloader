@@ -1,12 +1,18 @@
-# URL zusammensetzen
+# Construct URL
 $baseURL = "https://ragnacustoms.com/songs/ddl/"
 $startIndex = 3645
 $endIndex = 9
 
-# Zielverzeichnis für die heruntergeladenen Dateien
-$targetDirectory = "C:\Users\leini\Downloads\temp1"
+# Target directory for downloaded files
+$targetDirectory = "$env:USERPROFILE\Downloads\RagnarockVR-Music"
 
-# Funktion zur Überprüfung, ob eine .dat-Datei im Ordner vorhanden ist
+# Create target directory if it does not exist
+if (-not (Test-Path $targetDirectory)) {
+    New-Item -ItemType Directory -Path $targetDirectory | Out-Null
+    Write-Host "Created target directory: $targetDirectory" -ForegroundColor Green
+}
+
+# Function to check if a .dat file exists in the folder
 function Test-DatFile {
     param (
         [string]$folderPath
@@ -21,50 +27,32 @@ function Test-DatFile {
     }
 }
 
-# Schleife für den Dateidownload
+# Loop for file download
 for ($i = $startIndex; $i -ge $endIndex; $i--) {
-    # URL für den aktuellen Index erstellen
+    # Create URL for the current index
     $currentURL = $baseURL + $i.ToString() + ".zip"
     
-    # Ziel-Pfad für die heruntergeladene Datei
+    # Destination path for downloaded file
     $destination = Join-Path -Path $targetDirectory -ChildPath "$i.zip"
     
     try {
-        # Datei herunterladen
+        # Download file
         Invoke-WebRequest -Uri $currentURL -OutFile $destination -ErrorAction Stop
         
-        # Ausgabe, dass der Download erfolgreich war
-        Write-Host "Download von Datei $i erfolgreich abgeschlossen. Datei wurde unter $destination gespeichert."
+        # Output successful download message
+        Write-Host "File $i has been successfully downloaded, saved at $destination." -ForegroundColor Green
         
-        # ZIP-Datei extrahieren
+        # Extract ZIP file
         $extractedFolder = Expand-Archive -Path $destination -DestinationPath $targetDirectory -Force
         
-        # Überprüfen, ob eine .dat-Datei im extrahierten Ordner vorhanden ist
-        if (Test-DatFile -folderPath $extractedFolder) {
-            Write-Host "Korrekte Datei gefunden im Ordner: $extractedFolder"
-        } else {
-            Write-Host "Keine korrekte Datei gefunden im Ordner: $extractedFolder"
-            
-            # Falls eine .dat-Datei nicht gefunden wurde, kopiere den Inhalt des Ordners auf die oberste Ebene
-            $subfolders = Get-ChildItem -Path $extractedFolder -Directory
-            foreach ($subfolder in $subfolders) {
-                $subfolderFiles = Get-ChildItem -Path $subfolder.FullName -Recurse
-                
-                foreach ($file in $subfolderFiles) {
-                    $newFilePath = Join-Path -Path $targetDirectory -ChildPath $file.Name
-                    Move-Item -Path $file.FullName -Destination $newFilePath -Force
-                }
-            }
-            
-            # Bereinigen des leeren Ordners
-            Remove-Item -Path $extractedFolder -Recurse -Force
-        }
-        
-        # Bereinigen der ZIP-Datei nach dem Extrahieren
+        # Clean up ZIP file after extraction
         Remove-Item $destination -Force
+
+        # Output successful download message
+        Write-Host "$destination, extracted, and cleanup completed." -ForegroundColor Green
     }
     catch {
-        # Ausgabe, falls ein Fehler auftritt
-        Write-Host "Fehler beim Verarbeiten von Datei $($i): $($_.Exception.Message)"
+        # Output error message if an error occurs
+        Write-Host "Error processing file $($i): $($_.Exception.Message)" -ForegroundColor Red
     }
 }
