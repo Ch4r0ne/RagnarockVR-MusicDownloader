@@ -1,6 +1,6 @@
 # URL zusammensetzen
 $baseURL = "https://ragnacustoms.com/songs/ddl/"
-$startIndex = 3600
+$startIndex = 3645
 $endIndex = 9
 
 # Zielverzeichnis für die heruntergeladenen Dateien
